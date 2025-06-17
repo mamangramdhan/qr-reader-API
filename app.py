@@ -15,18 +15,30 @@ def scan():
     try:
         data = request.get_json()
         image_url = data.get("image_url")
+
         if not image_url:
             return jsonify({"error": "No image_url provided"}), 400
 
         response = requests.get(image_url)
         img = Image.open(BytesIO(response.content))
-        decoded = decode(img)
+        decoded_objects = decode(img)
 
-        if not decoded:
-            return jsonify({"error": "No barcode detected"}), 404
+        if not decoded_objects:
+            return jsonify({"error": "No barcode or QR code detected"}), 404
 
-        results = [{"type": d.type, "data": d.data.decode()} for d in decoded]
+        results = []
+        for obj in decoded_objects:
+            results.append({
+                "type": obj.type,
+                "data": obj.data.decode("utf-8")
+            })
+
         return jsonify(results)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
